@@ -1,72 +1,67 @@
 const exitBtn = new LogoutButton();
 exitBtn.action = () => {
     ApiConnector.logout(response => {
-        if (response.success === true) {
+        if (response.success) {
             location.reload();
         }
-
-        console.log(response);
     });
 }
 
 ApiConnector.current(response => {
-    console.log(response);
-    if (response.success === true) {
+    if (response.success) {
         ProfileWidget.showProfile(response.data);
     }
 });
 
 const currencyRates = new RatesBoard();
-//Напишите интервал, который будет многократно выполняться (раз в минуту) и вызывать вашу функцию с получением валют.
-ApiConnector.getStocks(response => {
-    console.log(response);
-    if (response.success === true) {
-        currencyRates.clearTable();
-        currencyRates.fillTable(response.data);
-    }
-})
 
-//Также выведите сообщение об успехе или *ошибку* (причину неудачного действия) пополнении баланса в окне отображения сообщения (`setMessage`).
+function getCurrencyRates() {
+    ApiConnector.getStocks(response => {
+        if (response.success) {
+            currencyRates.clearTable();
+            currencyRates.fillTable(response.data);
+        }
+    })
+}
+
+getCurrencyRates();
+
+const intervalId = setInterval(getCurrencyRates, 60000);
+
 const moneyWork = new MoneyManager();
 moneyWork.addMoneyCallback = (data) => {
     ApiConnector.addMoney(data, (response) => {
-        console.log(response);
-        if (response.success === true) {
+        if (response.success) {
             ProfileWidget.showProfile(response.data);
         }
 
-        this.setMessage(isSuccess, message);
+        moneyWork.setMessage(response.success, response.success ? "Баланс пополнен успешно" : response.error);
     })
 }
 
-//Также выведите сообщение об успехе или *ошибку* (причину неудачного действия) пополнении баланса в окне отображения сообщения (`setMessage`).
 moneyWork.conversionMoneyCallback = (data) => {
     ApiConnector.convertMoney(data, (response) => {
-        console.log(response);
-        if (response.success === true) {
+        if (response.success) {
             ProfileWidget.showProfile(response.data);
         }
 
-        this.setMessage(isSuccess, message);
+        moneyWork.setMessage(response.success, response.success ? "Операция выполнена успешно" : response.error);
     })
 }
 
-//Также выведите сообщение об успехе или *ошибку* (причину неудачного действия) пополнении баланса в окне отображения сообщения (`setMessage`).
 moneyWork.sendMoneyCallback = (data) => {
     ApiConnector.transferMoney(data, (response) => {
-        console.log(response);
-        if (response.success === true) {
+        if (response.success) {
             ProfileWidget.showProfile(response.data);
         }
 
-        this.setMessage(isSuccess, message);
+        moneyWork.setMessage(response.success, response.success ? "Перевод выполнен успешно" : response.error);
     })
 }
 
 const favorites = new FavoritesWidget();
 ApiConnector.getFavorites(response => {
-    console.log(response);
-    if (response.success === true) {
+    if (response.success) {
         favorites.clearTable();
         favorites.fillTable(response.data);
         moneyWork.updateUsersList(response.data);
@@ -75,22 +70,24 @@ ApiConnector.getFavorites(response => {
 
 favorites.addUserCallback = (data) => {
     ApiConnector.addUserToFavorites(data, (response) => {
-        console.log(response);
-        if (response.success === true) {
+        if (response.success) {
             favorites.clearTable();
             favorites.fillTable(response.data);
             moneyWork.updateUsersList(response.data);
         }
+
+        moneyWork.setMessage(response.success, response.success ? "Пользователь успешно добавлен" : response.error);
     })
 }
 
 favorites.removeUserCallback = (data) => {
     ApiConnector.removeUserFromFavorites(data, (response) => {
-        console.log(response);
-        if (response.success === true) {
+        if (response.success) {
             favorites.clearTable();
             favorites.fillTable(response.data);
             moneyWork.updateUsersList(response.data);
         }
+
+        moneyWork.setMessage(response.success, response.success ? "Пользователь удален" : response.error);
     })
 }
